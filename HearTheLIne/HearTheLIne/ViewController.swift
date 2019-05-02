@@ -117,8 +117,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 } catch { AKLog("Errored recording.") }
             case .ended:
                 userIsDrawing = false
-             //   lineNodes = newPointBuffer
-                
                 micBooster.gain = 0
                 tape = recorder.audioFile!
                 player.load(audioFile: tape)
@@ -210,7 +208,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sessTool.toolNode!.scale = SCNVector3Make(0.1, 0.1, 0.1)
         
         let placeHolderNode = SCNNode()
-        positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera - 1)
+        positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera)
         
         sessTool.toolNode!.position = placeHolderNode.position
         sessTool.toolNode!.rotation = placeHolderNode.rotation
@@ -265,14 +263,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsDrawing {
             if bufferNode == nil {
                 bufferNode = SCNNode()
-//                bufferNode!.geometry?.firstMaterial?.emission.contents = UIColor.orange
-//                bufferNode!.geometry?.firstMaterial?.normal.contents = UIColor.orange
-//                bufferNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.orange
-
                 rootNode?.addChildNode(bufferNode!)
                 newPointBuffer = []
             } else {
-                let newNode = (SCNNode(geometry: SCNSphere(radius: sessTool.size * 1.2)))
+                let newNode = (SCNNode(geometry: SCNSphere(radius: sessTool.size)))
                 newNode.geometry?.firstMaterial?.emission.contents = UIColor.orange
                 newNode.geometry?.firstMaterial?.normal.contents = UIColor.orange
                // newNode.geometry?.firstMaterial?.diffuse.contents = UIColor.orange
@@ -298,7 +292,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 if lastPoint == nil {
                     lastPoint = newNode
                 } else {
-                    let cylinderNode = cylinderFrom(vector: lastPoint!.position, toVector: newNode.position)
+                    cylinderNode = cylinderFrom(vector: lastPoint!.position, toVector: newNode.position)
                     cylinderNode.position = calculateGlobalAverage([lastPoint!, newNode])
                     cylinderNode.look(at: newNode.position, up: rootNode!.worldUp, localFront: rootNode!.worldUp)
                     cylinderNode.geometry?.firstMaterial?.emission.contents = UIColor.orange
@@ -343,37 +337,45 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     func updateListen() {
         if !userIsDrawing {
-//            if lineNodes != nil {
-                var shouldPlay = false
-                
-                //edit recorded recoding time into node index and change color when audio is playing
-                if lineNodes.count > 0 && playerNodeIdx < lineNodes.count {
-                    let nodeInfo = lineNodes[playerNodeIdx]
-                    let playerNode = nodeInfo["node"] as! SCNNode
-                    let playerNodePosition = playerNode.presentation.worldPosition
-                    let playerNodePositionGLK = SCNVector3ToGLKVector3(playerNodePosition)
-                    let toolPosition = sessTool.toolNode!.presentation.worldPosition
-                    let toolPositionGLK = SCNVector3ToGLKVector3(toolPosition)
-                    let distance = GLKVector3Distance(playerNodePositionGLK, toolPositionGLK)
-                    let recordingTime = nodeInfo["recordingTime"] as! Double
-                    print(recordingTime)
-                    let nextPlayerTime = recordingTime + 0.1
-                    if distance < 0.1 && player.currentTime <= nextPlayerTime {
-                        shouldPlay = true
-                        print(player.currentTime)
-                        playerNode.geometry?.firstMaterial?.emission.contents = UIColor.blue
-                        let playerCylinderNode = nodeInfo["cylinder"] as! SCNNode
-                        playerCylinderNode.geometry?.firstMaterial?.emission.contents = UIColor.blue
-                        if player.currentTime - nextPlayerTime < 0.01  {
-                            playerNodeIdx += 1
-                        }
+            var shouldPlay = false
+            
+            if lineNodes.count > 0 && playerNodeIdx < lineNodes.count {
+                let nodeInfo = lineNodes[playerNodeIdx]
+                let playerNode = nodeInfo["node"] as! SCNNode
+                let playerNodePosition = playerNode.presentation.worldPosition
+                let playerNodePositionGLK = SCNVector3ToGLKVector3(playerNodePosition)
+                let toolPosition = sessTool.toolNode!.presentation.worldPosition
+                let toolPositionGLK = SCNVector3ToGLKVector3(toolPosition)
+                let distance = GLKVector3Distance(playerNodePositionGLK, toolPositionGLK)
+                let recordingTime = nodeInfo["recordingTime"] as! Double
+                print(recordingTime)
+                let nextPlayerTime = recordingTime + 0.1
+                if distance < 0.1 && player.currentTime <= nextPlayerTime {
+                    shouldPlay = true
+                    print(player.currentTime)
+                    playerNode.geometry?.firstMaterial?.diffuse.contents = UIColor.darkGray
+                    let playerCylinderNode = nodeInfo["cylinder"] as! SCNNode
+                    playerCylinderNode.geometry?.firstMaterial?.diffuse.contents = UIColor.darkGray
+                    if player.currentTime - nextPlayerTime < 0.01  {
+                        playerNodeIdx += 1
                     }
                 }
+            }
+            
+            if playerNodeIdx == lineNodes.count {
+                player.stop()
                 
-                if playerNodeIdx == lineNodes.count {
-                    player.stop()
-                    
+            }
+            
+            if shouldPlay {
+                if !player.isPlaying {
+                    player.isPaused ? player.resume() : player.play()
                 }
+            } else {
+                if player.isPlaying { player.pause() }
+            }
+        }
+    }
 //                for point in lineNodes! {
 //                    let pointPosition = point.presentation.worldPosition
 //                    let pointPositionGLK = SCNVector3ToGLKVector3(pointPosition)
@@ -395,16 +397,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 //                    }
 //                   // print(lineNodes as Any)
 //                }
-                if shouldPlay {
-                    if !player.isPlaying {
-                        player.isPaused ? player.resume() : player.play()
-                } else {
-                    if player.isPlaying { player.pause() }
-                }
-            }
-            
-        }
-    }
+   
     
     private func calculateGlobalAverage(_ nodeList: [SCNNode]) -> SCNVector3 {
         // returns the average position of all nodes in nodeList
