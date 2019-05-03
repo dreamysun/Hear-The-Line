@@ -224,6 +224,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         node.transform = (sceneView.pointOfView?.transform)!
         var pointerVector = SCNVector3(-1 * node.transform.m31, -1 * node.transform.m32, -1 * node.transform.m33)
         pointerVector.scaleBy(dist)
+        // print(pointerVector)
         node.position += pointerVector
     }
 
@@ -339,6 +340,25 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if !userIsDrawing {
             var shouldPlay = false
             
+            if lineNodes.count > 0 && playerNodeIdx < lineNodes.count && playerNodeIdx > 1 {
+                let current = lineNodes[playerNodeIdx]["node"] as! SCNNode
+                let prev = lineNodes[playerNodeIdx - 1]["node"] as! SCNNode
+                
+                let currentPos = current.presentation.worldPosition
+                let prevPos = prev.presentation.worldPosition
+                
+                let currentPosGLK = SCNVector3ToGLKVector3(currentPos)
+                let prevPosGLK = SCNVector3ToGLKVector3(prevPos)
+                let distance = GLKVector3Distance(currentPosGLK, prevPosGLK)
+                print( distance)
+//                if (distance > 2.0) {
+//                    playerNodeIdx += 1
+//                }
+                if (distance == 0.0) {
+                    playerNodeIdx += 1
+                }
+            }
+            
             if lineNodes.count > 0 && playerNodeIdx < lineNodes.count {
                 let nodeInfo = lineNodes[playerNodeIdx]
                 let playerNode = nodeInfo["node"] as! SCNNode
@@ -348,7 +368,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 let toolPositionGLK = SCNVector3ToGLKVector3(toolPosition)
                 let distance = GLKVector3Distance(playerNodePositionGLK, toolPositionGLK)
                 let recordingTime = nodeInfo["recordingTime"] as! Double
-                print(recordingTime)
+                // print(recordingTime)
                 let nextPlayerTime = recordingTime + 0.1
                 if distance < 0.1 && player.currentTime <= nextPlayerTime {
                     shouldPlay = true
@@ -451,6 +471,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         updateDraw()
         updateListen()
         updateTool()
+       //  print(">>>", lineNodes)
     }
     func session(_ session: ARSession, didFailWithError error: Error) {
         // Present an error message to the user
