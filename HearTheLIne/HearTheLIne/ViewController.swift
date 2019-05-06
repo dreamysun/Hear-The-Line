@@ -16,6 +16,8 @@ import AVFoundation
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
+   // var textNode: TextNode!
+   // let augmentedRealitySession = ARSession()
     var rootNode: SCNNode?
     var sessTool: Tool!
     var userIsDrawing = false
@@ -39,10 +41,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return upVec
     }
     
-
+    
+    
     var newPointBuffer: [SCNNode]?
 
+    @IBOutlet weak var textView: UITextView!
  
+    @IBOutlet weak var textButton: UIButton!
+    @IBOutlet weak var textButton2: UIButton!
+    @IBOutlet weak var textButton3: UIButton!
+    
     @IBOutlet weak var icon: UIImageView!
     
     //var image = UIImage(named:"recordicon.png")
@@ -96,11 +104,15 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
 //            let singleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(reactToTap(byReactingTo:)))
 //            sceneView.addGestureRecognizer(singleTapRecognizer)
+      
             
         }
+        
+        
     }
     
     
+    var count = 0
     
     @objc func reactToLongPress(byReactingTo holdRecognizer: UILongPressGestureRecognizer) {
         switch sessTool.currentMode {
@@ -108,7 +120,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             switch holdRecognizer.state {
             case .began:
                 userIsDrawing = true
-                
+                textButton.isHidden = true
+                textButton2.isHidden = true
                 if AKSettings.headPhonesPlugged {
                     micBooster.gain = 1
                 }
@@ -117,6 +130,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 } catch { AKLog("Errored recording.") }
             case .ended:
                 userIsDrawing = false
+                //text show and hide
+                textButton3.isHidden = false
                 micBooster.gain = 0
                 tape = recorder.audioFile!
                 player.load(audioFile: tape)
@@ -160,21 +175,27 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         super.viewDidLoad()
 //        var imageView = UIImageView(frame:CGRect(x:self.sceneView.bounds.width/2,y:self.sceneView.bounds.height/2,width:80,height:80))
 //
-       
-        //icon.image = recordicon
-//        imageView.image = recordicon
-//        self.view.addSubview(imageView)
-
+    
         sceneView.delegate = self
     
         
         setupScene()
         setupTool()
+        
+  
+
     }
     
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         UIApplication.shared.isIdleTimerDisabled = true
+        textButton3.isHidden = true
+
+//        textNode = TextNode(text: textView.text!,colour:.white)
+//        sceneView.scene.rootNode.addChildNode(textNode)
+//        textNode.position = SCNVector3(0,0,-2)
+//
 
     }
     
@@ -184,6 +205,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Pause the view's session
         sceneView.session.pause()
     }
+    
+
+    
     
     var configuration = ARWorldTrackingConfiguration()
     func setupScene() {
@@ -340,24 +364,24 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if !userIsDrawing {
             var shouldPlay = false
             
-            if lineNodes.count > 0 && playerNodeIdx < lineNodes.count && playerNodeIdx > 1 {
-                let current = lineNodes[playerNodeIdx]["node"] as! SCNNode
-                let prev = lineNodes[playerNodeIdx - 1]["node"] as! SCNNode
-                
-                let currentPos = current.presentation.worldPosition
-                let prevPos = prev.presentation.worldPosition
-                
-                let currentPosGLK = SCNVector3ToGLKVector3(currentPos)
-                let prevPosGLK = SCNVector3ToGLKVector3(prevPos)
-                let distance = GLKVector3Distance(currentPosGLK, prevPosGLK)
-                print( distance)
-//                if (distance > 2.0) {
+//            if lineNodes.count > 0 && playerNodeIdx < lineNodes.count && playerNodeIdx > 1 {
+//                let current = lineNodes[playerNodeIdx]["node"] as! SCNNode
+//                let prev = lineNodes[playerNodeIdx - 1]["node"] as! SCNNode
+//
+//                let currentPos = current.presentation.worldPosition
+//                let prevPos = prev.presentation.worldPosition
+//
+//                let currentPosGLK = SCNVector3ToGLKVector3(currentPos)
+//                let prevPosGLK = SCNVector3ToGLKVector3(prevPos)
+//                let distance = GLKVector3Distance(currentPosGLK, prevPosGLK)
+//                print( distance)
+////                if (distance > 2.0) {
+////                    playerNodeIdx += 1
+////                }
+//                if (distance == 0.0) {
 //                    playerNodeIdx += 1
 //                }
-                if (distance == 0.0) {
-                    playerNodeIdx += 1
-                }
-            }
+//            }
             
             if lineNodes.count > 0 && playerNodeIdx < lineNodes.count {
                 let nodeInfo = lineNodes[playerNodeIdx]
@@ -372,6 +396,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 let nextPlayerTime = recordingTime + 0.1
                 if distance < 0.1 && player.currentTime <= nextPlayerTime {
                     shouldPlay = true
+                    textButton3.isHidden = true
                     print(player.currentTime)
                     playerNode.geometry?.firstMaterial?.diffuse.contents = UIColor.darkGray
                     let playerCylinderNode = nodeInfo["cylinder"] as! SCNNode
@@ -487,4 +512,77 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Reset tracking and/or remove existing anchors if consistent tracking is required
         
     }
+    
+    
 }
+
+
+
+//
+//class TextNode:SCNNode {
+//
+//
+//    var textGeometry: SCNText!
+//
+//    /// Creates An SCNText Geometry
+//    ///
+//    /// - Parameters:
+//    ///   - text: String (The Text To Be Displayed)
+//    ///   - depth: Optional CGFloat (Defaults To 1)
+//    ///   - font: UIFont
+//    ///   - textSize: Optional CGFloat (Defaults To 3)
+//    ///   - colour: UIColor
+//    init(text: String, depth: CGFloat = 1, font: String = "Helvatica", textSize: CGFloat = 3, colour: UIColor) {
+//
+//        super.init()
+//
+//        //1. Create The Text Geometry With String & Depth Parameters
+//        textGeometry = SCNText(string: text , extrusionDepth: depth)
+//
+//        //2. Set The Font With Our Set Font & Size
+//        textGeometry.font = UIFont(name: font, size: textSize)
+//
+//        //3. Set The Flatness To Zero (This Makes The Text Look Smoother)
+//        textGeometry.flatness = 0
+//
+//        //4. Set The Colour Of The Text
+//        textGeometry.firstMaterial?.diffuse.contents = colour
+//
+//        //5. Set The Text's Material
+//        self.geometry = textGeometry
+//
+//        //6. Scale The Text So We Can Actually See It!
+//        self.scale = SCNVector3(0.01, 0.01 , 0.01)
+//    }
+//
+//    required init?(coder aDecoder: NSCoder) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
+//}
+//
+////--------------------------
+////MARK: UITextFieldDelegate
+////--------------------------
+//
+//extension ViewController: UITextFieldDelegate{
+//
+//    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+//
+//        print("Current Text = \(textField.text!)")
+//
+//        DispatchQueue.main.async {
+//
+//            self.textNode.textGeometry.string = textField.text!
+//        }
+//
+//        return true
+//    }
+//
+//
+//}
+//
+
+
+    
+    
+
