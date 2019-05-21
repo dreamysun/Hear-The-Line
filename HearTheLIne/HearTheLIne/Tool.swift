@@ -29,8 +29,8 @@ class Tool {
         currentMode = toolMode.Pen
         selection = []
        // toolNode = SCNNode()
-        let image = UIImage(named: "recordicon")
-        toolNode = SCNNode(geometry: SCNPlane(width: 0.7, height: 0.6))
+        let image = UIImage(named: "icon")
+        toolNode = SCNNode(geometry: SCNPlane(width: 0.8, height: 0.8))
         toolNode.geometry?.firstMaterial?.diffuse.contents = image
     }
     
